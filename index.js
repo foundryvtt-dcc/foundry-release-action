@@ -9,6 +9,7 @@ import * as fvtt from '@foundryvtt/foundryvtt-cli'
 const actionToken = core.getInput('actionToken')
 const manifestFileName = core.getInput('manifestFileName')
 const manifestProtectedTrue = core.getInput('manifestProtectedTrue')
+const publicRepositoryAndBranch = core.getInput('publicRepositoryAndBranch')
 const octokit = github.getOctokit(actionToken)
 const owner = github.context.payload.repository.owner.login
 const repo = github.context.payload.repository.name
@@ -142,7 +143,7 @@ async function run () {
     let manifestProtectedValue = 'false'
     if (manifestProtectedTrue === 'true') {
       downloadURL = ''
-      manifestURL = `https://raw.githubusercontent.com/${owner}/dcc-content/main/${repo}/${versionNumber}/${manifestFileName}`
+      manifestURL = `https://raw.githubusercontent.com/${publicRepositoryAndBranch}/${repo}/${versionNumber}/${manifestFileName}`
       manifestProtectedValue = 'true'
     }
 

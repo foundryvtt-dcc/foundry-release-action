@@ -17,6 +17,10 @@ inputs:
     description: 'Name of the package-lock.json file'
     required: false
     default: 'package-lock.json'
+  publicRepositoryAndBranch:
+    description: 'owner/repo/branch of the public repository where manifests should be uploaded'
+    required: false
+    default: 'foundryvtt-dcc/dcc-content/main'
 runs:
   using: 'node20'
   main: 'index.js'
