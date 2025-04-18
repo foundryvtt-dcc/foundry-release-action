@@ -34,6 +34,7 @@ jobs:
           actionToken: ${{ secrets.GITHUB_TOKEN }}
           manifestFileName: 'module.json'
           manifestProtectedTrue: true
+          publicRepositoryAndBranch: 'foundryvtt-dcc/dcc-content/main'
 ```
 
 For `manifestFileName` you will either enter `system.json` or `module.json` depending on your project.
