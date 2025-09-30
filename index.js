@@ -19,6 +19,12 @@ const zipName = `${github.context.payload.repository.name}.zip`
 
 async function compilePacks (data) {
   try {
+    // Check if packs directory exists
+    if (!fs.existsSync('packs')) {
+      console.log('No packs directory found, skipping pack compilation')
+      return
+    }
+
     //Parse the JSON data
     data = JSON.parse(data)
 
