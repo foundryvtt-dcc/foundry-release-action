@@ -94,6 +94,7 @@ async function getCommitLog () {
                     (commit) =>
                             !commit.commit.author.name.includes('bot') &&
                             !commit.commit.message.includes('version.txt') &&
+                            !commit.commit.message.includes('Bump') &&
                             !commit.commit.message.includes('Merge remote-tracking branch')
             )
             .forEach((commit) => {
