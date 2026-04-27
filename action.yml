@@ -1,4 +1,5 @@
 name: 'Foundry Release Action'
+
 description: 'GitHub Action to Release Foundry VTT Systems and Modules'
 inputs:
   actionToken:
@@ -22,5 +23,5 @@ inputs:
     required: false
     default: 'foundryvtt-dcc/dcc-content/main'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'index.js'
