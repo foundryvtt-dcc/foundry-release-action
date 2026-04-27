@@ -1,10 +1,10 @@
 {
   "name": "foundry-release-action",
-  "version": "1.0",
+  "version": "1.1",
   "description": "GitHub Action to Create Releases for Foundry VTT Systems and Modules",
   "main": "index.js",
   "scripts": {
-    "check": "standard"
+    "check": "standard --fix"
   },
   "repository": {
     "type": "git",
