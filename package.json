@@ -20,10 +20,10 @@
   },
   "homepage": "https://github.com/foundryvtt-dcc/foundry-release-action#readme",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/github": "^5.1.1",
-    "@foundryvtt/foundryvtt-cli": "^1.0.3",
-    "shelljs": "^0.8.5"
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
+    "@foundryvtt/foundryvtt-cli": "^3.0.3",
+    "shelljs": "^0.10.0"
   },
   "devDependencies": {
     "standard": "^17.1.2"
