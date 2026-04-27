@@ -3,6 +3,9 @@
   "version": "1.0",
   "description": "GitHub Action to Create Releases for Foundry VTT Systems and Modules",
   "main": "index.js",
+  "scripts": {
+    "check": "standard"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/foundryvtt-dcc/foundry-release-action.git"
