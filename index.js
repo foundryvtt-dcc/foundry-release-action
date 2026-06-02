@@ -145,13 +145,26 @@ async function run () {
     let versionNumber = fs.readFileSync('version.txt', 'utf-8')
     versionNumber = `v${versionNumber.trim()}`
 
-    // Set up Download URLs
+    // Set up Download / Manifest URLs.
+    //
+    // The `download` URL is per-version (Foundry fetches the exact release zip).
+    // The `manifest` URL is intentionally STABLE / non-versioned so that a copy
+    // installed from a manifest URL keeps detecting updates without the user
+    // re-pointing it every release (Foundry re-polls the installed manifest field).
+    //
+    //   - Free / public modules: the module repo's own `latest.json` on its default
+    //     branch (public, so the raw URL is reachable). `latest.json` is refreshed
+    //     each release by foundry-manifest-update-action.
+    //   - Protected modules: the non-versioned root manifest published to the public
+    //     content repo (publicRepositoryAndBranch), refreshed each release by
+    //     foundry-release-upload-action.
+    const defaultBranch = github.context.payload.repository.default_branch || 'main'
     let downloadURL = `https://github.com/${owner}/${repo}/releases/download/${versionNumber}/${repo}.zip`
-    let manifestURL = `https://github.com/${owner}/${repo}/releases/download/${versionNumber}/${manifestFileName}`
+    let manifestURL = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/latest.json`
     let manifestProtectedValue = 'false'
     if (manifestProtectedTrue === 'true') {
       downloadURL = ''
-      manifestURL = `https://raw.githubusercontent.com/${publicRepositoryAndBranch}/${repo}/${versionNumber}/${manifestFileName}`
+      manifestURL = `https://raw.githubusercontent.com/${publicRepositoryAndBranch}/${repo}/${manifestFileName}`
       manifestProtectedValue = 'true'
     }
 
