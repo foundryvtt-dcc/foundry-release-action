@@ -147,20 +147,21 @@ async function run () {
 
     // Set up Download / Manifest URLs.
     //
-    // The `download` URL is per-version (Foundry fetches the exact release zip).
-    // The `manifest` URL is intentionally STABLE / non-versioned so that a copy
-    // installed from a manifest URL keeps detecting updates without the user
-    // re-pointing it every release (Foundry re-polls the installed manifest field).
+    // BOTH the `download` and `manifest` URLs are per-version, pointing at this
+    // release's immutable assets. Foundry's Package Release API validates the
+    // manifest's self-referential `manifest` field when promoting a release to
+    // the package's installable "current version". A MOVING manifest URL (e.g.
+    // a `latest.json` on the default branch) is accepted by the API but the
+    // validator refuses to promote it, which silently freezes the in-app
+    // installer on the last release that used a versioned manifest. So the
+    // `manifest` field MUST point to this exact version's `system.json` /
+    // `module.json` release asset.
     //
-    //   - Free / public modules: the module repo's own `latest.json` on its default
-    //     branch (public, so the raw URL is reachable). `latest.json` is refreshed
-    //     each release by foundry-manifest-update-action.
-    //   - Protected modules: the non-versioned root manifest published to the public
-    //     content repo (publicRepositoryAndBranch), refreshed each release by
-    //     foundry-release-upload-action.
-    const defaultBranch = github.context.payload.repository.default_branch || 'main'
+    //   - Protected modules: the non-versioned root manifest published to the
+    //     public content repo (publicRepositoryAndBranch), refreshed each release
+    //     by foundry-release-upload-action.
     let downloadURL = `https://github.com/${owner}/${repo}/releases/download/${versionNumber}/${repo}.zip`
-    let manifestURL = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/latest.json`
+    let manifestURL = `https://github.com/${owner}/${repo}/releases/download/${versionNumber}/${manifestFileName}`
     let manifestProtectedValue = 'false'
     if (manifestProtectedTrue === 'true') {
       downloadURL = ''
