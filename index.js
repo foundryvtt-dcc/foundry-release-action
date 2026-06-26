@@ -71,21 +71,33 @@ async function createRelease (versionNumber, commitLog) {
 
 async function getCommitLog () {
   try {
-    // Get The Latest Release
-    console.log(`Get Latest Release for ${owner}/${repo}`)
-    const latestRelease = await octokit.rest.repos.getLatestRelease({
-      owner,
-      repo
-    })
+    // Get The Latest Release to bound the changelog. The very first release has
+    // no predecessor, so getLatestRelease 404s — fall back to listing all
+    // commits rather than failing the run.
+    let since
+    try {
+      console.log(`Get Latest Release for ${owner}/${repo}`)
+      const latestRelease = await octokit.rest.repos.getLatestRelease({
+        owner,
+        repo
+      })
+      since = latestRelease.data.created_at
+    } catch (error) {
+      if (error.status === 404) {
+        console.log('No previous release found; including all commits in the release notes.')
+      } else {
+        throw error
+      }
+    }
 
-    // Get Commits Since That Release's Date
+    // Get Commits Since That Release's Date (or all commits on the first release)
     console.log(`Get Latest Commits for ${owner}/${repo}`)
     const commitList = await octokit.rest.repos.listCommits({
       owner,
       per_page: 100,
       repo,
       sha: github.context.payload.repository.default_branch,
-      since: latestRelease.data.created_at
+      ...(since ? { since } : {})
     })
     let commitListMarkdown = ''
     commitList.data
@@ -102,8 +114,10 @@ async function getCommitLog () {
 
     return commitListMarkdown
   } catch (error) {
+    // The changelog is cosmetic — never fail the release because it could not be
+    // built. Log the problem and ship the release with empty notes.
     console.log(error)
-    core.setFailed(error.message)
+    return ''
   }
 }
 
