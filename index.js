@@ -54,14 +54,14 @@ async function compilePacks (data) {
   }
 }
 
-async function createRelease (versionNumber, commitLog) {
+async function createRelease (versionNumber, releaseNotes) {
   try {
     return await octokit.rest.repos.createRelease({
       owner,
       repo,
       tag_name: `${versionNumber}`,
       name: `${versionNumber}`,
-      body: `Release ${versionNumber}\n\n## Release Notes:\n${commitLog}`,
+      body: `Release ${versionNumber}\n\n## Release Notes:\n${releaseNotes}`,
       draft: true
     })
   } catch (error) {
@@ -69,11 +69,11 @@ async function createRelease (versionNumber, commitLog) {
   }
 }
 
-async function getCommitLog () {
+async function getReleaseNotes () {
   try {
-    // Get The Latest Release to bound the changelog. The very first release has
-    // no predecessor, so getLatestRelease 404s — fall back to listing all
-    // commits rather than failing the run.
+    // Get The Latest Release to bound the notes. The very first release has no
+    // predecessor, so getLatestRelease 404s — fall back to every merged PR
+    // rather than failing the run.
     let since
     try {
       console.log(`Get Latest Release for ${owner}/${repo}`)
@@ -84,38 +84,44 @@ async function getCommitLog () {
       since = latestRelease.data.created_at
     } catch (error) {
       if (error.status === 404) {
-        console.log('No previous release found; including all commits in the release notes.')
+        console.log('No previous release found; including all merged PRs in the release notes.')
       } else {
         throw error
       }
     }
 
-    // Get Commits Since That Release's Date (or all commits on the first release)
-    console.log(`Get Latest Commits for ${owner}/${repo}`)
-    const commitList = await octokit.rest.repos.listCommits({
+    // One tight bullet per merged PR — not per commit. The PR title already
+    // carries the issue reference by convention (e.g. "fix(sheet): ... (#779)"),
+    // so appending the PR number gives both the issue and PR refs, and the PR
+    // author is the implementor. Assembling from PRs keeps each feature to a
+    // single line instead of dumping multi-line squash-commit bodies.
+    console.log(`Get Merged Pull Requests for ${owner}/${repo}`)
+    const pullList = await octokit.rest.pulls.list({
       owner,
-      per_page: 100,
       repo,
-      sha: github.context.payload.repository.default_branch,
-      ...(since ? { since } : {})
+      state: 'closed',
+      base: github.context.payload.repository.default_branch,
+      sort: 'updated',
+      direction: 'desc',
+      per_page: 100
     })
-    let commitListMarkdown = ''
-    commitList.data
-      .filter(
-        (commit) =>
-          !commit.commit.author.name.includes('bot') &&
-          !commit.commit.message.includes('version.txt') &&
-          !commit.commit.message.includes('Bump') &&
-          !commit.commit.message.includes('Merge remote-tracking branch')
-      )
-      .forEach((commit) => {
-        commitListMarkdown += `* ${commit.commit.message} (${commit.commit.author.name})\n`
+
+    let releaseNotesMarkdown = ''
+    pullList.data
+      // Only PRs merged since the last release (ISO 8601 UTC strings compare
+      // lexicographically == chronologically). Closed-but-not-merged PRs and
+      // anything from a prior release are dropped.
+      .filter((pull) => pull.merged_at && (!since || pull.merged_at > since))
+      // Newest merge first.
+      .sort((a, b) => (a.merged_at < b.merged_at ? 1 : -1))
+      .forEach((pull) => {
+        releaseNotesMarkdown += `* ${pull.title} (#${pull.number}) — @${pull.user.login}\n`
       })
 
-    return commitListMarkdown
+    return releaseNotesMarkdown
   } catch (error) {
-    // The changelog is cosmetic — never fail the release because it could not be
-    // built. Log the problem and ship the release with empty notes.
+    // The release notes are cosmetic — never fail the release because they
+    // could not be built. Log the problem and ship the release with empty notes.
     console.log(error)
     return ''
   }
@@ -200,13 +206,13 @@ async function run () {
     console.log('Compiling packs...')
     await compilePacks(data)
 
-    // Git List of Commits Since Last Release
-    console.log('Get Commit Log')
-    const commitLog = await getCommitLog()
+    // Assemble Release Notes from PRs Merged Since Last Release
+    console.log('Get Release Notes')
+    const releaseNotes = await getReleaseNotes()
 
     // Create Release
     console.log('Create Release')
-    const releaseResponse = await createRelease(versionNumber, commitLog)
+    const releaseResponse = await createRelease(versionNumber, releaseNotes)
     await shell.exec(`git config user.email '${committerEmail}'`)
     await shell.exec(`git config user.name '${committerUsername}'`)
     await shell.exec(`git commit -am 'Release ${versionNumber}'`)
