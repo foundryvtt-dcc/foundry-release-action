@@ -25,7 +25,7 @@
   "dependencies": {
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
-    "@foundryvtt/foundryvtt-cli": "^3.0.3",
+    "@foundryvtt/foundryvtt-cli": "^3.0.4",
     "shelljs": "^0.10.0"
   },
   "devDependencies": {
